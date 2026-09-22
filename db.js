@@ -1,9 +1,9 @@
-// db.js - Pusat Sinkronisasi Database Cloud Online Global Global (onews-4c45b)
+// db.js - PUSAT KENDALI DATABASE ONLINE (SUDAH DIKOREKSI)
 
 const FIREBASE_URL = "https://onews-4c45b-default-rtdb.asia-southeast1.firebasedatabase.app/";
 const FIREBASE_BASE = "https://onews-4c45b-default-rtdb.asia-southeast1.firebasedatabase.app/";
 
-// Fungsi mengambil data berita dari Cloud Online dengan penyesuaian objek
+// Fungsi mengambil data berita dari Cloud Online
 async function getNewsOnline() {
     try {
         const response = await fetch(FIREBASE_URL);
@@ -11,7 +11,6 @@ async function getNewsOnline() {
         
         if (!data) return [];
         
-        // Membaca database secara fleksibel baik dalam bentuk array maupun objek bersarang (nested)
         return Object.keys(data).map(key => {
             const item = data[key];
             return {
@@ -26,7 +25,7 @@ async function getNewsOnline() {
                     text: item.comments[cKey].text || ""
                 })) : []
             };
-        }).reverse(); // Membalik urutan agar berita terbaru selalu muncul paling atas di halaman
+        }).reverse();
     } catch (error) {
         console.error("Gagal mengambil data dari database cloud:", error);
         return [];
@@ -38,6 +37,7 @@ async function saveNewsOnline(newArticle) {
     try {
         await fetch(FIREBASE_URL, {
             method: "POST",
+            mode: "cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(newArticle)
         });
@@ -62,6 +62,7 @@ async function submitCommentOnline(newsId, commentObj) {
         const commentUrl = `${FIREBASE_BASE}${newsId}/comments.json`;
         await fetch(commentUrl, {
             method: "POST",
+            mode: "cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(commentObj)
         });
