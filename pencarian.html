@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>ONEWS - Hasil Pencarian</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">ONEWS</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Beranda</a>
+                <a href="bencana.html" class="nav-link">Bencana</a>
+                <a href="ekonomi.html" class="nav-link">Ekonomi</a>
+                <a href="livestream.html" class="nav-link">Live Stream</a>
+                <a id="adminMenuLink" href="login.html" class="nav-link" style="border-left: 1px solid #475569; padding-left:16px;">Admin</a>
+            </div>
+            <div class="search-box"><input type="text" placeholder="Cari berita..." class="search-input" onkeydown="handleGlobalSearch(event)"></div>
+        </div>
+    </nav>
+    <main>
+        <div class="page-header">
+            <h1 class="page-title">Hasil Pencarian</h1>
+            <p id="searchQueryInfo" class="page-desc">Mencari data dari server...</p>
+        </div>
+        <div id="newsGrid" class="news-grid"></div>
+    </main>
+    <script src="db.js"></script>
+    <script src="modal.js"></script>
+    <script>
+        async function doSearch() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const q = decodeURIComponent(urlParams.get('q') || '').toLowerCase().trim();
+            document.getElementById("searchQueryInfo").innerText = `Menampilkan hasil pencarian online untuk kata kunci: "${q}"`;
+            const grid = document.getElementById("newsGrid");
+            grid.innerHTML = "<p style='grid-column:1/-1; text-align:center; color:#94a3b8;'>Memindai cloud online...</p>";
+            
+            const db = await getNewsOnline();
+            grid.innerHTML = "";
+            const filtered = db.filter(item => item.title.toLowerCase().includes(q) || item.content.toLowerCase().includes(q));
+            if(filtered.length === 0) { grid.innerHTML = `<p style="grid-column:1/-1;text-align:center;color:#94a3b8;font-style:italic;">Tidak ada berita online yang cocok.</p>`; return; }
+            filtered.forEach(news => {
+                const short = news.content.length > 90 ? news.content.substring(0, 90) + "..." : news.content;
+                const card = document.createElement("div");
+                card.className = "news-card";
+                card.innerHTML = `<img src="${news.image || 'https://unsplash.com'}" class="news-img"><div class="news-body"><div><span class="news-badge">${news.category}</span><h3 class="news-title" style="margin-top:8px;">${news.title}</h3><p class="news-desc" style="margin-top:6px;">${short}</p></div><button onclick="openModal('${news.id}')" class="read-more-btn" style="margin-top:12px;">Baca Selengkapnya</button></div>`;
+                grid.appendChild(card);
+            });
+        }
+        doSearch();
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>ONEWS - Login Admin</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">ONEWS</a>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Beranda</a>
+                <a href="bencana.html" class="nav-link">Bencana</a>
+                <a href="ekonomi.html" class="nav-link">Ekonomi</a>
+                <a href="livestream.html" class="nav-link">Live Stream</a>
+<!-- KODE BARU YANG SUDAH DIPERBAIKI -->
+                <a href="login.html" class="nav-link active" style="border-left: 1px solid #475569; padding-left: 16px;">Admin</a>
+            </div>
+        </div>
+    </nav>
+    <main>
+        <div class="admin-box">
+            <h2 style="text-align:center; margin-bottom: 24px; font-weight: 900;">Login Administrator</h2>
+            <div id="loginError" style="display:none; background:#fef2f2; border:1px solid #fee2e2; color:#dc2626; padding:12px; border-radius:8px; margin-bottom:16px; text-align:center; font-size:13px; font-weight:bold;"></div>
+            <div class="form-group"><label class="form-label">Username</label><input type="text" id="usernameInput" class="form-input"></div>
+            <div class="form-group"><label class="form-label">Password</label><input type="password" id="passwordInput" class="form-input"></div>
+            <button onclick="processLogin()" class="action-btn">Masuk Sistem</button>
+        </div>
+    </main>
+    <script src="db.js"></script>
+    <script>
+        function processLogin() {
+            const u = document.getElementById("usernameInput").value.trim();
+            const p = document.getElementById("passwordInput").value.trim();
+            const err = document.getElementById("loginError");
+            if (u === "superuser" && p === "copilot14") {
+                localStorage.setItem("onews_admin_login", "true");
+                window.location.href = "admin.html";
+            } else {
+                err.innerText = "Kredensial administrator tidak valid.";
+                err.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>ONEWS - Panel Kerja</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <a href="index.html" class="logo">ONEWS</a>
+            <button onclick="handleGlobalLogout()" class="delete-btn">Keluar Admin</button>
+        </div>
+    </nav>
+    <main style="background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 24px;">
+            <h2 style="font-weight:900; font-size:22px; color:#0f172a;">Panel Kerja Editor</h2>
+            <p style="font-size:13px; color:#64748b;">Koneksi cloud Firebase database aktif. Data sinkron ke HP secara langsung.</p>
+        </div>
+        
+        <div style="background: #f8fafc; padding: 24px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 32px;">
+            <h3 style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 16px;">Buat Artikel Berita Baru</h3>
+            
+            <div class="form-group">
+                <label class="form-label">Kategori Saluran Berita</label>
+                <select id="formCategory" class="form-select" onchange="toggleFormFields()">
+                    <option value="bencana">Bencana</option>
+                    <option value="ekonomi">Ekonomi</option>
+                    <option value="livestream">Live Stream</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Judul Berita / Siaran</label>
+                <input type="text" id="formTitle" class="form-input">
+            </div>
+
+            <div id="normalFields">
+                <div class="form-group">
+                    <label class="form-label">Tautan Gambar Sampul (URL)</label>
+                    <input type="text" id="formImage" placeholder="https://unsplash.com..." class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Isi Berita Lengkap</label>
+                    <textarea id="formContent" rows="6" class="form-textarea"></textarea>
+                </div>
+            </div>
+
+            <div id="liveFields" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Tautan Transmisi Siaran (URL Link)</label>
+                    <input type="text" id="formLiveUrl" placeholder="Contoh: https://youtube.com..." class="form-input">
+                </div>
+            </div>
+
+            <button onclick="createNews()" class="action-btn" style="width: auto; padding: 12px 32px;">Terbitkan Berita</button>
+        </div>
+
+        <div>
+            <h3 style="font-size: 14px; font-weight: 700; color: #475569; text-transform: uppercase; margin-bottom: 16px;">Daftar Inventaris Berita Aktif</h3>
+            <div id="loadingTable" style="font-size:13px; color:#64748b; font-style:italic; padding:10px 0;">Menghubungkan ke server cloud...</div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Judul Berita / Siaran</th>
+                        <th style="width:140px;">Kategori</th>
+                        <th style="width:120px;text-align:center;">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody id="adminNewsList"></tbody>
+            </table>
+        </div>
+    </main>
+    <script src="db.js"></script>
+    <script>
+        if(localStorage.getItem("onews_admin_login") !== "true") { window.location.href = "login.html"; }
+
+        function toggleFormFields() {
+            const category = document.getElementById("formCategory").value;
+            const normalFields = document.getElementById("normalFields");
+            const liveFields = document.getElementById("liveFields");
+            if (category === "livestream") {
+                normalFields.style.display = "none";
+                liveFields.style.display = "block";
+            } else {
+                normalFields.style.display = "block";
+                liveFields.style.display = "none";
+            }
+        }
+
+        async function renderTable() {
+            const tbody = document.getElementById("adminNewsList");
+            const loading = document.getElementById("loadingTable");
+            tbody.innerHTML = "";
+            loading.style.display = "block";
+            
+            const db = await getNewsOnline();
+            loading.style.display = "none";
+            
+            db.forEach(news => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td style="padding:14px; font-weight:bold; color:#1e293b;">${news.title}</td><td style="padding:14px; text-transform:uppercase; font-size:12px; font-weight:bold; color:#64748b;">${news.category}</td><td style="padding:14px; text-align:center;"><button onclick="deleteNews('${news.id}')" class="delete-btn">Hapus</button></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function createNews() {
+            const t = document.getElementById("formTitle").value.trim();
+            const c = document.getElementById("formCategory").value;
+            let i = document.getElementById("formImage").value.trim();
+            const co = document.getElementById("formContent").value.trim();
+            const lUrl = document.getElementById("formLiveUrl").value.trim();
+
+            if (!t) { alert("Judul wajib diisi."); return; }
+
+            let newArticle = { title: cleanEmoji(t), category: c };
+
+            if (c === "livestream") {
+                if (!lUrl) { alert("Tautan live stream wajib diisi."); return; }
+                newArticle.liveUrl = lUrl;
+                newArticle.content = "Siaran langsung eksternal.";
+            } else {
+                if (!co) { alert("Isi berita wajib diisi."); return; }
+                if (!i) i = "https://unsplash.comphoto-1504711434969-e33886168f5c?auto=format&fit=crop&w=800&q=80";
+                newArticle.image = i;
+                newArticle.content = cleanEmoji(co);
+            }
+
+            await saveNewsOnline(newArticle);
+            
+            document.getElementById("formTitle").value = ""; 
+            document.getElementById("formImage").value = ""; 
+            document.getElementById("formContent").value = "";
+            document.getElementById("formLiveUrl").value = "";
+            
+            await renderTable(); 
+            alert("Berita berhasil dikirim ke server cloud!");
+        }
+
+        async function deleteNews(id) {
+            if (confirm("Hapus berita ini dari database cloud?")) {
+                await deleteNewsOnline(id);
+                await renderTable();
+            }
+        }
+        renderTable();
+    </script>
+</body>
+</html>
