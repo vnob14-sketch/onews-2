@@ -126,6 +126,7 @@
                 newArticle.content = cleanEmoji(co);
             }
 
+            // PERBAIKAN UTAMA: Mengirimkan data secara asinkron langsung ke Firebase Cloud
             await saveNewsOnline(newArticle);
             
             document.getElementById("formTitle").value = ""; 
