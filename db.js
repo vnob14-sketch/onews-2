@@ -1,9 +1,9 @@
-// db.js - Sinkronisasi Sistem Data Online Cloud Global
+// db.js - Pusat Sinkronisasi Database Cloud Online Global Global (onews-4c45b)
 
-// GANTI URL DI BAWAH INI DENGAN TAUTAN URL FIREBASE REALTIME DATABASE ANDA!
-const FIREBASE_URL = "https://console.firebase.google.com/project/onews-4c45b/database/onews-4c45b-default-rtdb/data/~2F?fb_gclid=Cj0KCQjwzsjVBhC3ARIsALnMv4mJTpP3O3svClV9oBrvoJhWD2vPnq17Vofc-GjlNZEVWF-3MEBh2EcaAn-DEALw_wcB&fb_utm_campaign=Cloud-SS-DR-Firebase-FY26-global-gsem-1713590&fb_utm_content=text-ad&fb_utm_medium=cpc&fb_utm_source=google&fb_utm_term=KW_firebase";
+const FIREBASE_URL = "https://onews-4c45b-default-rtdb.asia-southeast1.firebasedatabase.app/";
+const FIREBASE_BASE = "https://onews-4c45b-default-rtdb.asia-southeast1.firebasedatabase.app/";
 
-// Fungsi mengambil data berita dari Cloud Online secara real-time
+// Fungsi mengambil data berita dari Cloud Online dengan penyesuaian objek
 async function getNewsOnline() {
     try {
         const response = await fetch(FIREBASE_URL);
@@ -11,16 +11,22 @@ async function getNewsOnline() {
         
         if (!data) return [];
         
-        // Mengubah format objek Firebase menjadi struktur array agar tidak merusak kode HTML Anda
-        return Object.keys(data).map(key => ({
-            id: key, // Menggunakan ID unik bawaan Firebase
-            title: data[key].title,
-            category: data[key].category,
-            image: data[key].image || "",
-            content: data[key].content || "",
-            liveUrl: data[key].liveUrl || "",
-            comments: data[key].comments ? Object.values(data[key].comments) : []
-        }));
+        // Membaca database secara fleksibel baik dalam bentuk array maupun objek bersarang (nested)
+        return Object.keys(data).map(key => {
+            const item = data[key];
+            return {
+                id: key,
+                title: item.title || "",
+                category: item.category || "",
+                image: item.image || "https://unsplash.com",
+                content: item.content || "",
+                liveUrl: item.liveUrl || "",
+                comments: item.comments ? Object.keys(item.comments).map(cKey => ({
+                    name: item.comments[cKey].name || "",
+                    text: item.comments[cKey].text || ""
+                })) : []
+            };
+        }).reverse(); // Membalik urutan agar berita terbaru selalu muncul paling atas di halaman
     } catch (error) {
         console.error("Gagal mengambil data dari database cloud:", error);
         return [];
@@ -43,7 +49,7 @@ async function saveNewsOnline(newArticle) {
 // Fungsi menghapus berita dari Cloud Online
 async function deleteNewsOnline(id) {
     try {
-        const deleteUrl = `https://firebasedatabase.app{id}.json`;
+        const deleteUrl = `${FIREBASE_BASE}${id}.json`;
         await fetch(deleteUrl, { method: "DELETE" });
     } catch (error) {
         console.error("Gagal menghapus data dari database cloud:", error);
@@ -53,7 +59,7 @@ async function deleteNewsOnline(id) {
 // Fungsi mengirim komentar pengunjung ke Cloud Online
 async function submitCommentOnline(newsId, commentObj) {
     try {
-        const commentUrl = `https://firebasedatabase.app{newsId}/comments.json`;
+        const commentUrl = `${FIREBASE_BASE}${newsId}/comments.json`;
         await fetch(commentUrl, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
